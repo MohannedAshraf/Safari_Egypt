@@ -1,9 +1,12 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:safari_egypt_app/core/app_colors.dart';
 import 'package:safari_egypt_app/core/app_images.dart';
 import 'package:safari_egypt_app/features/Home/view/home_drawer.dart';
+import 'package:safari_egypt_app/features/Home/view/search_screen.dart';
 import 'package:safari_egypt_app/features/Notification/view/notification_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,11 +18,14 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _carouselIndex = 0;
+  late PageController _pageController;
+  Timer? _carouselTimer;
 
   final List<String> carousel = [
     AppImages.onboarding1,
     AppImages.onboarding2,
     AppImages.onboarding3,
+    AppImages.onboarding4,
   ];
 
   final List<Map<String, String>> categories = [
@@ -39,6 +45,33 @@ class _HomeScreenState extends State<HomeScreen> {
       'discount': '${10 + i}%',
     },
   );
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: _carouselIndex);
+
+    _carouselTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (_carouselIndex < carousel.length - 1) {
+        _carouselIndex++;
+      } else {
+        _carouselIndex = 0;
+      }
+      _pageController.animateToPage(
+        _carouselIndex,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _carouselTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,24 +116,36 @@ class _HomeScreenState extends State<HomeScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
+                textInputAction: TextInputAction.search,
+                onSubmitted: (value) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SearchScreen(query: value),
+                    ),
+                  );
+                },
                 decoration: InputDecoration(
                   hintText: 'Search destinations, hotels...',
-                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: const Icon(Icons.search),
                   isDense: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.primaryColor),
                   ),
                 ),
               ),
             ),
-
             const SizedBox(height: 12),
 
             // Carousel
             SizedBox(
               height: isLarge ? 260 : 200,
               child: PageView.builder(
+                controller: _pageController,
                 itemCount: carousel.length,
                 onPageChanged: (i) => setState(() => _carouselIndex = i),
                 itemBuilder:
@@ -157,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
+                      boxShadow: const [
                         BoxShadow(
                           color: Colors.black12,
                           blurRadius: 6,
@@ -181,12 +226,24 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'Best Trip',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              child: Row(
+                children: [
+                  const Text(
+                    'Best Trip',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  Spacer(),
+                  TextButton(
+                    onPressed: () {},
+                    child: const Text(
+                      'See All',
+                      style: TextStyle(color: AppColors.primaryColor),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
 
             SizedBox(
               height: 220,
@@ -206,30 +263,40 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'Recommendation',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              child: Row(
+                children: [
+                  const Text(
+                    'Recommendation',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  Spacer(),
+                  TextButton(
+                    onPressed: () {},
+                    child: const Text(
+                      'See All',
+                      style: TextStyle(color: AppColors.primaryColor),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
 
             SizedBox(
-              height: 180,
+              height: 220,
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 scrollDirection: Axis.horizontal,
                 itemBuilder:
                     (context, index) => _TripCard(
                       data: trips[index],
-                      width: isLarge ? 220 : 160,
+                      width: isLarge ? 260 : 180,
                       compact: true,
                     ),
                 separatorBuilder: (_, __) => const SizedBox(width: 12),
                 itemCount: trips.length,
               ),
             ),
-
-            const SizedBox(height: 24),
           ],
         ),
       ),
