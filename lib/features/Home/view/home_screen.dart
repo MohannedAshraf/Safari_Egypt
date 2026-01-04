@@ -8,6 +8,7 @@ import 'package:safari_egypt_app/core/app_images.dart';
 import 'package:safari_egypt_app/features/Home/view/home_drawer.dart';
 import 'package:safari_egypt_app/features/Home/view/search_screen.dart';
 import 'package:safari_egypt_app/features/Notification/view/notification_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -251,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 scrollDirection: Axis.horizontal,
                 itemBuilder:
-                    (context, index) => _TripCard(
+                    (context, index) => TripCard(
                       data: trips[index],
                       width: isLarge ? 260 : 180,
                     ),
@@ -288,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 scrollDirection: Axis.horizontal,
                 itemBuilder:
-                    (context, index) => _TripCard(
+                    (context, index) => TripCard(
                       data: trips[index],
                       width: isLarge ? 260 : 180,
                       compact: true,
@@ -304,21 +305,51 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _TripCard extends StatelessWidget {
+class TripCard extends StatefulWidget {
   final Map<String, String> data;
   final double width;
   final bool compact;
 
-  const _TripCard({
+  const TripCard({
     required this.data,
     required this.width,
     this.compact = false,
+    super.key,
   });
+
+  @override
+  State<TripCard> createState() => _TripCardState();
+}
+
+class _TripCardState extends State<TripCard> {
+  bool isFavorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavoriteStatus();
+  }
+
+  Future<void> _loadFavoriteStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      // حفظ الحالة حسب اسم الرحلة كمفتاح
+      isFavorite = prefs.getBool(widget.data['title']!) ?? false;
+    });
+  }
+
+  Future<void> _toggleFavorite() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isFavorite = !isFavorite;
+      prefs.setBool(widget.data['title']!, isFavorite);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: width,
+      width: widget.width,
       child: Card(
         clipBehavior: Clip.hardEdge,
         child: Column(
@@ -328,8 +359,12 @@ class _TripCard extends StatelessWidget {
               child: Stack(
                 children: [
                   Positioned.fill(
-                    child: Image.asset(data['image']!, fit: BoxFit.cover),
+                    child: Image.asset(
+                      widget.data['image']!,
+                      fit: BoxFit.cover,
+                    ),
                   ),
+                  // علامة الخصم
                   Positioned(
                     top: 8,
                     left: 8,
@@ -343,20 +378,24 @@ class _TripCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '-${data['discount']}',
+                        '-${widget.data['discount']}',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
+                  // Favorite button
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: CircleAvatar(
-                      backgroundColor: Colors.white.withOpacity(0.8),
-                      child: const Icon(
-                        Icons.favorite_border,
-                        color: Colors.redAccent,
-                        size: 18,
+                    child: GestureDetector(
+                      onTap: _toggleFavorite,
+                      child: CircleAvatar(
+                        backgroundColor: Colors.white.withOpacity(1),
+                        child: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: isFavorite ? Colors.red : Colors.black,
+                          size: 28,
+                        ),
                       ),
                     ),
                   ),
@@ -369,7 +408,7 @@ class _TripCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    data['title']!,
+                    widget.data['title']!,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 4),
@@ -382,14 +421,14 @@ class _TripCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        data['location']!,
+                        widget.data['location']!,
                         style: const TextStyle(color: Colors.grey),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '${data['price']!}/day',
+                    '${widget.data['price']!}/day',
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ],

@@ -15,7 +15,7 @@ class HomeDrawer extends StatelessWidget {
       backgroundColor: const Color(0xFF1570EE),
       child: SafeArea(
         child: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.2,
+          width: MediaQuery.of(context).size.width * 0.72,
           child: Column(
             children: [
               const SizedBox(height: 32),
